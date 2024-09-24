@@ -1,0 +1,15 @@
+name: psaps
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - "python>=3.10"
+  - setuptools
+  - pip
+  - "biopython>=1.7"
+  - matplotlib
+  - seaborn
+  - ete3
+  - joblib
+  - numpy

@@ -1,0 +1,233 @@
+#!/usr/bin/env python3
+
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+import os
+import random
+import sys
+import argparse
+import subprocess
+from collections import defaultdict
+from psaps import util
+from operator import itemgetter
+import pkg_resources
+import traceback
+import seaborn as sns
+import matplotlib.pyplot as plt
+from ete3 import Tree
+from psaps import util
+import pandas as pd
+import statistics
+import numpy as np
+version = pkg_resources.require("psaps")[0].version
+
+def create_parser():
+	""" Parse arguments """
+	parser = argparse.ArgumentParser(description="""
+	Program: psaps
+	Author: Rauf Salamzade
+	Affiliation: Kalan Lab, UW Madison, Department of Medical Microbiology and Immunology
+	
+	This program takes as input an ortholog matrix, a species tree, and either a:
+	(1) mapping file grouping genomes to groupings or (2) count for the number of distinct
+	phylogenomic groups to divide the genomes into using Treemmer with the input species
+	tree.  
+	""", formatter_class=argparse.RawTextHelpFormatter)
+
+	parser.add_argument('-m', '--og-matrix', help="Path to tab-delimited orthogroup matrix. Columns should correspond to genome names and rows to orthogroups, with blank cells and/or cells with 0 indicating orthogroup absence in a genome and everything else indicating presence. First cell (first column, first row) should be blank or filler.", required=True)
+	parser.add_argument('-t', '--species-tree', help="Path to species tree in Newick format. Genome labels should match column names in orthogroup matrix.", required=False, default=None)
+	parser.add_argument('-g', '--group-map', help="Path to tab-delimited file where the first column corresponds to a genome name and the second column to the group/clade identifier.", required=False, default=None)
+	parser.add_argument('-k', '--clade-count', type=int, help="The number of distinct clades to partition genomes into using Treemmer with the input species tree [Default is 3].", required=False, default=3)
+	parser.add_argument('-p', '--pairwise', action='store_true', help="Perform pairwise assessments between genomes.", default=False, required=False)
+	parser.add_argument('-c', '--core-genome', type=float, help="The percentage of genomes an orthogroup needs to be found in to be considered core [Default is 80.0].", required=False, default=80.0)
+	parser.add_argument('-o', '--outdir', help="Path to output directory.", required=True)
+	parser.add_argument('-v', '--version', action='store_true', help="Print version and exit.", required=False, default=False)
+	args = parser.parse_args()
+	return args
+
+def main():
+	"""
+	Void function which runs primary workflow for program.
+	"""
+
+	sys.stderr.write('Running version ' + str(version) + ' of psaps!\n')
+	if len(sys.argv)>1 and ('-v' in set(sys.argv) or '--version' in set(sys.argv)):
+		sys.exit(0)
+
+	"""
+	PARSE REQUIRED INPUTS
+	"""
+	myargs = create_parser()
+
+	og_matrix_file = os.path.abspath(myargs.og_matrix)
+	species_tree_file = os.path.abspath(myargs.species_tree)
+	outdir = os.path.abspath(myargs.outdir) + '/'
+
+	group_map_file = myargs.group_map
+	clade_count = myargs.clade_count
+	pairwise_flag = myargs.pairwise
+	core_genome_percentage = myargs.core_genome
+
+	"""
+	START WORKFLOW
+	"""
+
+	if not os.path.isdir(outdir):
+		os.mkdir(outdir)
+	else:
+		sys.stderr.write('Overwriting existing results directory!\n')
+    
+	# Create logging object
+	log_file = outdir + 'Progress.log'
+	logObject = util.createLoggerObject(log_file)
+	parameters_file = outdir + 'Command_Issued.txt'
+	sys.stdout.write('Running psaps version %s\n' % version)
+	sys.stdout.write("Appending command issued for future records to: %s\n" % parameters_file)
+	sys.stdout.write("Logging more details at: %s\n" % log_file)
+	logObject.info("\nNEW RUN!!!\n**************************************")
+	logObject.info('Running psaps version %s' % version)
+	logObject.info("Appending command issued for future records to: %s" % parameters_file)
+
+	parameters_handle = open(parameters_file, 'a+')
+	parameters_handle.write(' '.join(sys.argv) + '\n')
+	parameters_handle.close()
+
+	# check overlap in genome names in species tree and orthogroup matrix
+	genomes = []
+	genome_ogs = defaultdict(set)
+	with open(og_matrix_file) as omf:
+		for i, line in enumerate(omf):
+			line = line.strip('\n')
+			ls = line.split('\t')
+			if i == 0:
+				genomes = ls[1:]
+			else:
+				og = ls[0]
+				for j, gs in enumerate(ls[1:]):
+					genome = genomes[j]
+					if gs.strip() != '0' and gs.strip() != '':
+						genome_ogs[genome].add(og)
+
+	t = Tree(species_tree_file) 
+	t.prune(genomes)
+	try:
+		leaf_count = 0 
+		for n in t.traverse():
+			if n.is_leaf(): leaf_count += 1
+		assert(leaf_count > 3)
+	except:
+		msg = 'Issue with validating that at least 3 genomes are found in species tree that are also found in orthogroup matrix.'
+		sys.stderr.write(msg + '\n')
+		logObject.error(msg)
+		sys.exit(1)
+	species_tree_file = outdir + 'Species_Tree.nwk'
+	t.write(format=1, outfile=species_tree_file)
+	
+	# parse/determine groups/clades
+	genome_to_group = {}
+	group_genomes = defaultdict(set)
+	groups = set([])
+	if group_map_file != None and os.path.isfile(group_map_file): 
+		with open(group_map_file) as ogmf:
+			for line in ogmf:
+				line = line.strip()
+				ls = line.split('\t')
+				if ls[0] in genomes:
+					groups.add(ls[1])
+					genome_to_group[ls[0]] = ls[1]
+					group_genomes[ls[1]].add(ls[0])
+				else:
+					msg = 'Genome %s is not in the orthogroup matrix %s' % (ls[0], og_matrix_file)
+					logObject.warning(msg)
+					sys.stderr.write('Warning: ' + msg + '\n')
+	else:
+		# download Treemmer
+		treemmer_link = 'https://raw.githubusercontent.com/fmenardo/Treemmer/refs/heads/master/Treemmer_v0.3.py'
+		msg = 'Downloading Treemmer python program.'
+		sys.stdout.write(msg + '\n')
+		logObject.info(msg)
+		wget_cmd = ['wget', '-q', treemmer_link, '-P', outdir]
+		treemmer_prog = outdir + 'Treemmer_v0.3.py'
+		try:
+			logObject.info('Running: ' + ' '.join(wget_cmd) + '\n')	
+			util.runCmd(wget_cmd, logObject, check_files=[treemmer_prog])
+		except:
+			msg = 'Issue running: ' + ' '.join(wget_cmd)
+			sys.stderr.write(msg + '\n')
+			logObject.info(msg)
+			sys.exit(1)			
+	
+	    # run Treemmer     
+		treemmer_cmd = ['python', treemmer_prog, species_tree_file, '-c', '1', '-X', str(clade_count)]
+		rep_listing_file = species_tree_file + '_trimmed_list_X_' + str(clade_count)
+		try:
+			logObject.info('Running: ' + ' '.join(treemmer_cmd))
+			util.runCmd(treemmer_cmd, logObject, check_files=[rep_listing_file])
+		except:
+			msg = 'Issue running: ' + ' '.join(treemmer_cmd) 
+			sys.stderr.write(msg + '\n')        
+			logObject.info(msg)
+			sys.exit(1)
+		
+		genome_to_group = util.determineClosestRep(species_tree_file, rep_listing_file)
+		gmp = open(outdir + 'genome_grouping.txt', 'w')	
+		gmp.write('genome\tgroup\n')
+		for g in genome_to_group:
+			gmp.write(g + '\t' + genome_to_group[g] + '\n')
+			groups.add(genome_to_group[g])
+			group_genomes[genome_to_group[g]].add(g)
+		gmp.close()
+
+	track_file = outdir + 'track.txt'
+	
+	tfh = open(track_file, 'w')
+	#if downsample_count == -1:
+	header = ['group', 'ratio', 'samples', 'branch_sum', 'tot_ogs', 'aux_ogs']
+	tfh.write('\t'.join(header) + '\n')
+	
+	ds_set = set([])
+	for group in groups:
+		if len(group_genomes[group]) >= 2:
+			if pairwise_flag: 
+				ggenomes = group_genomes[group]
+				for i, g1 in enumerate(sorted(ggenomes)):
+					for j, g2 in enumerate(sorted(ggenomes)):
+						if i > j:
+							branch_sum = util.determineBranchSumForGroup(species_tree_file, set([g1, g2]))
+							tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, set([g1, g2]), core_genome=core_genome_percentage)
+							ratio = tot_aux_ogs/branch_sum
+							tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs]]) + '\n')
+			else:
+				branch_sum = util.determineBranchSumForGroup(species_tree_file, group_genomes[group])
+				tot_ogs, tot_aux_ogs = util.determineOgCount(genome_ogs, group_genomes[group], core_genome=core_genome_percentage)
+				ratio = tot_aux_ogs/branch_sum
+				tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs]]) + '\n')
+		else:
+			msg = 'Group ' + group + ' doesn\'t have more than 2 members, so skipping...'
+			sys.stderr.write(msg + '\n')
+			logObject.info(msg) 
+	tfh.close()
+	
+	"""
+	pdf = pd.read_csv(track_file, sep='\t', header=0)
+	sns.set_theme(style='white')
+	p = sns.scatterplot(data=pdf, x='branch_sum', y='aux_ogs')
+	
+	for line in range(0,pdf.shape[0]):
+		p.text(pdf.branch_sum[line]+0.01, pdf.aux_ogs[line], 
+		pdf.group[line], horizontalalignment='center', 
+		size='medium', color='black', weight='semibold')
+
+	plt.xlabel('Core genome phylogeny branch sum')
+	plt.ylabel('Distinct auxiliary orthogroup count')
+	plt.savefig(outdir + "psaps_figure.pdf", format='pdf')
+	"""
+
+	logObject.info('******************\npsaps finished!\n******************')
+	sys.stdout.write('******************\npsaps finished!\n******************\n')
+	util.closeLoggerObject(logObject)
+	sys.exit(0)
+
+if __name__ == '__main__':
+	main()
