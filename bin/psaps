@@ -183,7 +183,7 @@ def main():
 	
 	tfh = open(track_file, 'w')
 	#if downsample_count == -1:
-	header = ['group', 'ratio', 'samples', 'branch_sum', 'tot_ogs', 'aux_ogs']
+	header = ['group', 'ratio', 'samples', 'branch_sum', 'tot_ogs', 'aux_ogs', 'aux_prop']
 	tfh.write('\t'.join(header) + '\n')
 	
 	ds_set = set([])
@@ -195,14 +195,14 @@ def main():
 					for j, g2 in enumerate(sorted(ggenomes)):
 						if i > j:
 							branch_sum = util.determineBranchSumForGroup(species_tree_file, set([g1, g2]))
-							tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, set([g1, g2]), core_genome=core_genome_percentage)
-							ratio = tot_aux_ogs/branch_sum
-							tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs]]) + '\n')
+							aux_prop, tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, set([g1, g2]), core_genome=core_genome_percentage)
+							ratio = aux_prop/branch_sum
+							tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
 			else:
 				branch_sum = util.determineBranchSumForGroup(species_tree_file, group_genomes[group])
-				tot_ogs, tot_aux_ogs = util.determineOgCount(genome_ogs, group_genomes[group], core_genome=core_genome_percentage)
-				ratio = tot_aux_ogs/branch_sum
-				tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs]]) + '\n')
+				aux_prop, tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, group_genomes[group], core_genome=core_genome_percentage)
+				ratio = aux_prop/branch_sum
+				tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
 		else:
 			msg = 'Group ' + group + ' doesn\'t have more than 2 members, so skipping...'
 			sys.stderr.write(msg + '\n')

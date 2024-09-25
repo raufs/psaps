@@ -67,7 +67,7 @@ def closeLoggerObject(logObject):
 def determineBranchSumForGroup(species_tree_file, group_genomes):
 	try:
 		t = Tree(species_tree_file) 
-		t.prune(group_genomes)
+		t.prune(group_genomes, preserve_branch_length=True)
 		phylo_breadth = 0.0
 		for n in t.traverse('postorder'):
 			phylo_breadth += n.dist
@@ -99,7 +99,7 @@ def determineOgCount(genome_ogs, group_genomes, core_genome=80.0):
 		tot_ogs = len(all_ogs)
 		tot_aux_ogs = len(aux_ogs)
 
-		return([tot_aux_ogs, tot_ogs])
+		return([tot_aux_ogs/tot_ogs, tot_aux_ogs, tot_ogs])
 		
 	except:
 		sys.stderr.write(traceback.format_exc() + '\n')
