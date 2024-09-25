@@ -2,7 +2,7 @@
 name = "psaps"
 authors = [{name="Rauf Salamzade", email="salamzader@gmail.com"}]
 version = "1.0.0"
-description = "Program to perform phylogenetic assessment of pangenome size."
+description = "Program to perform phylogenetic assessment of pangenome size/expansion."
 
 [build-system]
 requires = ["setuptools"]
