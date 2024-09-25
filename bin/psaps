@@ -21,7 +21,8 @@ import pandas as pd
 import statistics
 import numpy as np
 version = pkg_resources.require("psaps")[0].version
-
+from matplotlib import rcParams
+rcParams.update({'figure.autolayout': True})
 def create_parser():
 	""" Parse arguments """
 	parser = argparse.ArgumentParser(description="""
@@ -40,12 +41,12 @@ def create_parser():
 	Genomic fluidity and standardized genomic fluidity are only computed in pairwise mode.
 	""", formatter_class=argparse.RawTextHelpFormatter)
 
-	parser.add_argument('-m', '--og-matrix', help="Path to tab-delimited orthogroup matrix. Columns should correspond to genome names and rows to orthogroups, with blank cells and/or cells with 0 indicating orthogroup absence in a genome and everything else indicating presence. First cell (first column, first row) should be blank or filler.", required=True)
-	parser.add_argument('-t', '--species-tree', help="Path to species tree in Newick format. Genome labels should match column names in orthogroup matrix.", required=False, default=None)
-	parser.add_argument('-g', '--group-map', help="Path to tab-delimited file where the first column corresponds to a genome name and the second column to the group/clade identifier.", required=False, default=None)
-	parser.add_argument('-k', '--clade-count', type=int, help="The number of distinct clades to partition genomes into using Treemmer with the input species tree [Default is 3].", required=False, default=3)
+	parser.add_argument('-m', '--og-matrix', help="Path to tab-delimited orthogroup matrix. Columns\nshould correspond to genome names and rows to\northogroups, with blank cells and/or\ncells with 0 indicating orthogroup\nabsence in a genome and everything else indicating\npresence. First cell (first column, first row)\nshould be blank or filler.", required=True)
+	parser.add_argument('-t', '--species-tree', help="Path to species tree in Newick format. Genome\nlabels should match column names in orthogroup\nmatrix.", required=False, default=None)
+	parser.add_argument('-g', '--group-map', help="Path to tab-delimited file where the first column\ncorresponds to a genome name and the second\ncolumn to the group/clade identifier.", required=False, default=None)
+	parser.add_argument('-k', '--clade-count', type=int, help="The number of distinct clades to partition\ngenomes into using Treemmer with the input species\ntree [Default is 3].", required=False, default=3)
 	parser.add_argument('-p', '--pairwise', action='store_true', help="Perform pairwise assessments between genomes.", default=False, required=False)
-	parser.add_argument('-c', '--core-genome', type=float, help="The percentage of genomes an orthogroup needs to be found in to be considered core [Default is 80.0].", required=False, default=80.0)
+	parser.add_argument('-c', '--core-genome', type=float, help="The percentage of genomes an orthogroup needs to\nbe found in to be considered core [Default is 80.0].", required=False, default=80.0)
 	parser.add_argument('-o', '--outdir', help="Path to output directory.", required=True)
 	parser.add_argument('-v', '--version', action='store_true', help="Print version and exit.", required=False, default=False)
 	args = parser.parse_args()
@@ -214,20 +215,30 @@ def main():
 			logObject.info(msg)
 	tfh.close()
 	
-	"""
 	pdf = pd.read_csv(track_file, sep='\t', header=0)
 	sns.set_theme(style='white')
-	p = sns.scatterplot(data=pdf, x='branch_sum', y='aux_ogs')
 	
-	for line in range(0,pdf.shape[0]):
-		p.text(pdf.branch_sum[line]+0.01, pdf.aux_ogs[line], 
-		pdf.group[line], horizontalalignment='center', 
-		size='medium', color='black', weight='semibold')
+	if not pairwise_flag:
+		p = sns.scatterplot(data=pdf, x='branch_sum', y='aux_ogs')
+	
+		for line in range(0,pdf.shape[0]):
+			p.text(pdf.branch_sum[line]+0.01, pdf.aux_ogs[line], 
+			pdf.group[line], horizontalalignment='center', 
+			size='small', color='black')
+		
+		plt.xscale('log')
+		plt.yscale('log')
+		plt.xlabel('Core genome phylogeny branch sum')
+		plt.ylabel('Distinct auxiliary orthogroup count')
+		plt.savefig(outdir + "psaps_figure.pdf", format='pdf')
 
-	plt.xlabel('Core genome phylogeny branch sum')
-	plt.ylabel('Distinct auxiliary orthogroup count')
-	plt.savefig(outdir + "psaps_figure.pdf", format='pdf')
-	"""
+	else:
+		p = sns.boxplot(data=pdf, x='group', y='genome_fluidity_standardized')
+		plt.xticks(rotation=90)
+		plt.xlabel('')
+		plt.ylabel('Phylogenetically standardized genome fluidity metric')
+		plt.savefig(outdir + "psaps_figure.pdf", format='pdf')		
+
 
 	logObject.info('******************\npsaps finished!\n******************')
 	sys.stdout.write('******************\npsaps finished!\n******************\n')
