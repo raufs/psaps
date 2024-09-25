@@ -196,12 +196,12 @@ def main():
 						if i > j:
 							branch_sum = util.determineBranchSumForGroup(species_tree_file, set([g1, g2]))
 							aux_prop, tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, set([g1, g2]), core_genome=core_genome_percentage)
-							ratio = aux_prop/branch_sum
+							ratio = tot_ogs/branch_sum
 							tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
 			else:
 				branch_sum = util.determineBranchSumForGroup(species_tree_file, group_genomes[group])
 				aux_prop, tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, group_genomes[group], core_genome=core_genome_percentage)
-				ratio = aux_prop/branch_sum
+				ratio = tot_ogs/branch_sum
 				tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
 		else:
 			msg = 'Group ' + group + ' doesn\'t have more than 2 members, so skipping...'
