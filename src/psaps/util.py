@@ -76,6 +76,20 @@ def determineBranchSumForGroup(species_tree_file, group_genomes):
 		sys.stderr.write(traceback.format_exc() + '\n')
 		sys.exit(1)
 
+def calculateGenomeFluidityPair(genome_ogs, g1, g2):
+	try:
+		g1ogs = genome_ogs[g1]
+		g2ogs = genome_ogs[g2]
+		g1u = len(g1ogs.difference(g2ogs))
+		g2u = len(g2ogs.difference(g1ogs))
+		g1t = len(g1ogs)
+		g2t = len(g2ogs)
+		gf = (g1u + g2u)/(g1t + g2t)
+		return(gf)
+	except:
+		sys.stderr.write(traceback.format_exc() + '\n')
+		sys.exit(1)
+
 def determineOgCount(genome_ogs, group_genomes, core_genome=80.0):
 	try:
 		og_counts = defaultdict(int)
@@ -83,7 +97,7 @@ def determineOgCount(genome_ogs, group_genomes, core_genome=80.0):
 			for og in genome_ogs[g]:
 				og_counts[og] += 1
 		tot_genomes = len(group_genomes)
-		
+
 		core_ogs = set([])
 		for og in og_counts:
 			og_prop = og_counts[og]/float(tot_genomes)
@@ -97,6 +111,7 @@ def determineOgCount(genome_ogs, group_genomes, core_genome=80.0):
 			aux_ogs = aux_ogs.union(genome_ogs[g].difference(core_ogs))
 		
 		tot_ogs = len(all_ogs)
+		avg_ogs = tot_ogs/tot_genomes
 		tot_aux_ogs = len(aux_ogs)
 
 		return([tot_aux_ogs/tot_ogs, tot_aux_ogs, tot_ogs])

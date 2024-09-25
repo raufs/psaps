@@ -33,6 +33,11 @@ def create_parser():
 	(1) mapping file grouping genomes to groupings or (2) count for the number of distinct
 	phylogenomic groups to divide the genomes into using Treemmer with the input species
 	tree.  
+
+	It then computes statistics related to pangenome size and also branch distances across
+	subclades/groups of genomes by extracting/pruning them out of the global phylogeny.
+	
+	Genomic fluidity and standardized genomic fluidity are only computed in pairwise mode.
 	""", formatter_class=argparse.RawTextHelpFormatter)
 
 	parser.add_argument('-m', '--og-matrix', help="Path to tab-delimited orthogroup matrix. Columns should correspond to genome names and rows to orthogroups, with blank cells and/or cells with 0 indicating orthogroup absence in a genome and everything else indicating presence. First cell (first column, first row) should be blank or filler.", required=True)
@@ -183,7 +188,7 @@ def main():
 	
 	tfh = open(track_file, 'w')
 	#if downsample_count == -1:
-	header = ['group', 'ratio', 'samples', 'branch_sum', 'tot_ogs', 'aux_ogs', 'aux_prop']
+	header = ['group', 'genome_fluidity', 'genome_fluidity_standardized', 'samples', 'branch_sum', 'tot_ogs', 'aux_ogs', 'aux_prop']
 	tfh.write('\t'.join(header) + '\n')
 	
 	ds_set = set([])
@@ -196,17 +201,17 @@ def main():
 						if i > j:
 							branch_sum = util.determineBranchSumForGroup(species_tree_file, set([g1, g2]))
 							aux_prop, tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, set([g1, g2]), core_genome=core_genome_percentage)
-							ratio = tot_ogs/branch_sum
-							tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
+							gf = util.calculateGenomeFluidityPair(genome_ogs, g1, g2)
+							gf_stand = gf/branch_sum
+							tfh.write('\t'.join([str(x) for x in [group, gf, gf_stand, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
 			else:
 				branch_sum = util.determineBranchSumForGroup(species_tree_file, group_genomes[group])
 				aux_prop, tot_aux_ogs, tot_ogs = util.determineOgCount(genome_ogs, group_genomes[group], core_genome=core_genome_percentage)
-				ratio = tot_ogs/branch_sum
-				tfh.write('\t'.join([str(x) for x in [group, ratio, len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
+				tfh.write('\t'.join([str(x) for x in [group, 'NA', 'NA', len(group_genomes[group]), branch_sum, tot_ogs, tot_aux_ogs, aux_prop]]) + '\n')
 		else:
 			msg = 'Group ' + group + ' doesn\'t have more than 2 members, so skipping...'
 			sys.stderr.write(msg + '\n')
-			logObject.info(msg) 
+			logObject.info(msg)
 	tfh.close()
 	
 	"""
