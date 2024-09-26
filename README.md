@@ -24,14 +24,14 @@ For each group/species/clade, `psaps` will then prune the comprehensive phylogen
 ## Info on Outputs:
 
 * **track.txt**: The major output is simply a tab-delimited table reporting various metrics:
-        * **group**: The group/clade identifier.
-        * **genome_fluidity**: The genome fluidity metric per pair of genomes as defined by Kislyuk et al. 2011 - only computed in pairwise mode.
-        * **genome_fluidity_standardized**: The genome fluidity metric per pair of genomes divided by the branch distance between the genomes along the core genome phylogeny - only computed in pairwise mode.
-        * **samples**: The number of samples in the group.
-        * **branch_sum**: The aggregate sum of the phylogeny pruned for genomes belonging to the group. 
-        * **tot_ogs**: The number of total distinct ortholog groups found across the focal group.
-        * **aux_ogs**: The number of auxiliary ortholog groups (total ortholog groups - core ortholog groups). 
-        * **aux_prop**: The proportion of total ortholog groups which are auxiliary. 
+   * **group**: The group/clade identifier.
+   * **genome_fluidity**: The genome fluidity metric per pair of genomes as defined by Kislyuk et al. 2011 - only computed in pairwise mode.
+   * **genome_fluidity_standardized**: The genome fluidity metric per pair of genomes divided by the branch distance between the genomes along the core genome phylogeny - only computed in pairwise mode.
+   * **samples**: The number of samples in the group.
+   * **branch_sum**: The aggregate sum of the phylogeny pruned for genomes belonging to the group. 
+   * **tot_ogs**: The number of total distinct ortholog groups found across the focal group.
+   * **aux_ogs**: The number of auxiliary ortholog groups (total ortholog groups - core ortholog groups). 
+   * **aux_prop**: The proportion of total ortholog groups which are auxiliary. 
 
 * **psaps_plot.pdf**: A basic visualization of some results. If run without pairwise mode, the plot will be a scatterplot showing the relationship between aggregate branch lengths and distinct auxiliary ortholog groups for clades. If run in pairwise mode, then the plot will be show boxplots for each clade where values correspond to pairwise genome fluidity estimates standardized by phylogenetic distance.  
 
