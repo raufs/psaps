@@ -13,6 +13,39 @@ For instance, suppose you have 5 bacterial species and you are interested in fin
 
 For each group/species/clade, `psaps` will then prune the comprehensive phylogeny for only the genomes belonging to the group. This is done using ete3 (importantly with the option *preserve_branch_length* set to True). The branch lengths of the pruned clade-specific phylogeny are then summed and used as a measure of core genome phylogenetic breadth to standardize metrics associated with pangenomes, which range from genome fluidity (as defined by Kislyuk et al. 2011) to simply total number of ortholog groups to auxiliary ortholog groups (computed as simply the total number of ortholog groups minus the number of loose core ortholog groups (ortholog groups present in >=80% of genomes).
 
+## Dependencies
+
+Dependencies of psaps include:
+
+  - python>=3.10
+  - setuptools
+  - pip
+  - biopython>=1.7
+  - matplotlib
+  - seaborn
+  - ete3
+  - joblib
+  - numpy
+
+Specifics on conda environments and versions of additional dependencies used for our manuscript can be found in the subdirectory: `manuscript_analysis_details/`.
+
+## Installation
+
+Should take < 10 minutes (requires conda installation). Some conda channels with dependencies for psaps only support macOS and Linux.
+
+```shell
+# 1. clone Git repo and change directories into it!
+git clone https://github.com/raufs/psaps/
+cd psaps/
+
+# 2. create conda environment using yaml file and activate it!
+conda env create -f conda_env.yml -n psaps_env
+conda activate psaps_env
+
+# 3. complete python installation with the following command:
+pip install -e .
+```
+
 ## Info on Inputs:
 
 * **OG_MATRIX**: The orthogroup matrix file should be a tab-delmited text file where rows correspond to orthogroups and columns to genomes. Then the values of the matrix indicate whether an orthogroup is found in a genome. Any value besides a blank `` or `0` indicates presence. *Note, the first cell in the matrix/table should be blank or feature a dummy value to make the matrix/table rectangular.*
@@ -85,3 +118,7 @@ options:
                         Path to output directory.
   -v, --version         Print version and exit.
 ```
+
+## Citation:
+
+Complex multicellularity linked with expanded chemical arsenals in microbes. Salamzade, Kalan, and Currie, in review, 2025.
