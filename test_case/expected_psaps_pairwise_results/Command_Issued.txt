@@ -1,0 +1,1 @@
+/workspace/local/rauf/psaps/conda_env/bin/psaps -m Full_Orthogroup_Matrix.txt -t IQTree_SCC.treefile -g Clade_Mapping.txt -o psapas_pairwise_results/ -p
