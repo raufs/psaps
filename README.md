@@ -121,4 +121,4 @@ options:
 
 ## Citation:
 
-Complex multicellularity linked with expanded chemical arsenals in microbes. Salamzade, Kalan, and Currie, in review, 2025.
+Complex multicellularity linked with expanded chemical arsenals in microbes. Salamzade, Kalan, and Currie, 2025.
