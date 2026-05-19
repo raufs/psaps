@@ -36,7 +36,7 @@ Specifics on conda environments and versions of additional dependencies used for
 Note, (for some recipes at least) it is critical to specify the conda-forge channel before the bioconda channel to properly configure priority and lead to a successful installation.
 
 ```shell
-conda create -n psaps_env/ -c conda-forge -c bioconda psaps
+conda create -n psaps_env -c conda-forge -c bioconda psaps
 ```
 
 ### Conda (Manual)
