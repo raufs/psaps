@@ -11,7 +11,7 @@ import subprocess
 from collections import defaultdict
 from psaps import util
 from operator import itemgetter
-import pkg_resources
+from importlib.metadata import version as get_version
 import traceback
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -20,9 +20,10 @@ from psaps import util
 import pandas as pd
 import statistics
 import numpy as np
-version = pkg_resources.require("psaps")[0].version
 from matplotlib import rcParams
 rcParams.update({'figure.autolayout': True})
+version = get_version("psaps")
+
 def create_parser():
 	""" Parse arguments """
 	parser = argparse.ArgumentParser(description="""
