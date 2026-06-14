@@ -1,4 +1,10 @@
 # psaps
+[![Manuscript](https://img.shields.io/badge/Manuscript-InPress-darkblue?style=flat-square&maxAge=2678400)]()
+[![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg?style=flat)](http://bioconda.github.io/recipes/psaps/README.html)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/psaps/badges/downloads.svg)](https://anaconda.org/bioconda/psaps)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/psaps/badges/latest_release_date.svg)](https://anaconda.org/bioconda/psaps)
+[![Anaconda-Server Badge](https://anaconda.org/bioconda/psaps/badges/license.svg)](https://anaconda.org/bioconda/psaps)
+
 **p**hylogenetically **s**tandardized **a**ssessment of **p**angenome **s**ize / fluidity associated metrics
 
 <p align="center">
